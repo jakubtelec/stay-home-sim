@@ -2,6 +2,8 @@
 
 Advanced social distancing simulatior. Fight COVID-19, squash the curve. At home.
 
+Check it [HERE](https://stay-home-sim.now.sh/).
+
 ### Inspiration:
 
 - [this article](https://www.washingtonpost.com/graphics/2020/world/corona-simulator/)
