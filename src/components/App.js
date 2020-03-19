@@ -1,23 +1,15 @@
 import React from "react";
 import Board from "./Board";
 import GeneralControls from "./GeneralControls";
-import { THEME } from "../constants";
+import { THEME, DEFAULT_BOARDS } from "../constants";
 import { computeSizes } from "../helpers";
 
 import "antd/dist/antd.css";
 import "../styles.css";
 
-// TODO: simplify!
-const defaultBoards = [
-  { percIsolated: 0 },
-  { percIsolated: 50 },
-  { percIsolated: 75 },
-  { percIsolated: 90 }
-];
-
 class App extends React.Component {
   state = {
-    boards: [...defaultBoards],
+    boards: [...DEFAULT_BOARDS],
     keyAffix: Date.now(),
     running: false
   };
@@ -25,7 +17,7 @@ class App extends React.Component {
   resetFields() {
     const { examplesNum } = computeSizes();
     this.setState({
-      boards: defaultBoards.slice(0, examplesNum),
+      boards: DEFAULT_BOARDS.slice(0, examplesNum),
       keyAffix: Date.now(),
       running: false
     });

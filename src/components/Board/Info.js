@@ -26,30 +26,26 @@ const infoDefs = [
   }
 ];
 
-class Info extends React.Component {
-  render() {
-    return (
-      <div className="info">
-        {infoDefs.map(({ label, colors, getter }, idx) => (
+const Info = props => (
+  <div className="info">
+    {infoDefs.map(({ label, colors, getter }, idx) => (
+      <div
+        key={`info_${idx}`}
+        style={{ display: "flex", alignItems: "center" }}
+      >
+        {colors.map((color, _idx) => (
           <div
-            key={`info_${idx}`}
-            style={{ display: "flex", alignItems: "center" }}
+            className="person"
+            style={{ backgroundColor: color }}
+            key={`legend_${idx}_${_idx}`}
           >
-            {colors.map((color, _idx) => (
-              <div
-                className="person"
-                style={{ backgroundColor: color }}
-                key={`legend_${idx}_${_idx}`}
-              >
-                {" "}
-              </div>
-            ))}
-            {label}: {getter(this.props)}
+            {" "}
           </div>
         ))}
+        {label}: {getter(props)}
       </div>
-    );
-  }
-}
+    ))}
+  </div>
+);
 
 export default Info;

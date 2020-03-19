@@ -12,4 +12,11 @@ export const THEME = {
 
 export const POPULATION_SIZE = 120;
 
+export const DEFAULT_BOARDS = [
+  { percIsolated: 0 },
+  { percIsolated: 33 },
+  { percIsolated: 66 },
+  { percIsolated: 90 }
+];
+
 // export const MAX_WIDTH = 700;

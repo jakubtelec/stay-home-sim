@@ -25,8 +25,8 @@ class Board extends React.Component {
     const self = this,
       { percIsolated, playgroundSize } = self.props,
       atHome = Math.round((percIsolated / 100) * POPULATION_SIZE),
-      displaySize = playgroundSize / 40,
-      maxSpeed = displaySize / 10,
+      displaySize = playgroundSize / 35,
+      maxSpeed = displaySize / 8,
       spring = 0.05,
       friction = -0.9,
       population = [];
