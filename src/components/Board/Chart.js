@@ -46,18 +46,17 @@ class Chart extends PureComponent {
   addData() {
     const { infected, cured } = this.props;
     const { data } = this.state;
-
     if (this.props.running) {
       const newData = [...data, { infected, cured }];
       this.setState({ data: newData });
       if (this.myP5) this.myP5.draw();
     }
-    if (infected) this.timeout = setTimeout(() => this.addData(), 100);
+    // if (infected) this.timeout = setTimeout(() => this.addData(), 100);
   }
 
   componentDidMount() {
     this.myP5 = new p5(this.Sketch, this.myRef.current);
-    this.timeout = setTimeout(() => this.addData(), 300);
+    this.addData();
   }
 
   render() {

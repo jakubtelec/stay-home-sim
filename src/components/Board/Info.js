@@ -5,46 +5,65 @@ import "antd/dist/antd.css";
 
 const infoDefs = [
   {
-    label: "unaffected",
-    colors: [THEME.UNAFFECTED, THEME.AT_HOME],
-    getter: ({ infected, cured }) => POPULATION_SIZE - infected - cured
+    styleGetter: ({ infected, cured }) => ({
+      backgroundImage: `linear-gradient(90deg,${THEME.UNAFFECTED}, ${THEME.AT_HOME})`
+    }),
+    valGetter: ({ unaffected }) => unaffected
   },
   {
-    label: "at home",
-    colors: [THEME.AT_HOME],
-    getter: ({ atHome }) => atHome
+    styleGetter: () => ({
+      background: THEME.HIGHEST_INFECTED
+    }),
+    valGetter: ({ highestInfected }) => highestInfected
   },
   {
-    label: "infected",
-    colors: [THEME.INFECTED],
-    getter: ({ infected }) => infected
+    styleGetter: () => ({ background: THEME.INFECTED }),
+    valGetter: ({ infected }) => infected
   },
   {
-    label: "cured",
-    colors: [THEME.CURED],
-    getter: ({ cured }) => cured
+    styleGetter: () => ({ background: THEME.CURED }),
+    valGetter: ({ cured }) => cured
   }
 ];
 
 const Info = props => (
   <div className="info">
-    {infoDefs.map(({ label, colors, getter }, idx) => (
-      <div
-        key={`info_${idx}`}
-        style={{ display: "flex", alignItems: "center" }}
-      >
-        {colors.map((color, _idx) => (
+    {infoDefs.map(({ styleGetter, valGetter }, idx) => {
+      const value = valGetter(props);
+
+      return value ? (
+        <div
+          key={`info_${idx}`}
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            width: props.playgroundSize
+          }}
+        >
           <div
-            className="person"
-            style={{ backgroundColor: color }}
-            key={`legend_${idx}_${_idx}`}
+            className="bar-container"
+            style={{ widht: props.playgroundSize }}
           >
-            {" "}
+            {value && (
+              <div
+                className="bar"
+                style={{
+                  ...styleGetter(props),
+                  width: `${(valGetter(props) / POPULATION_SIZE) *
+                    props.playgroundSize *
+                    0.8}px`
+                }}
+              >
+                {" "}
+              </div>
+            )}
           </div>
-        ))}
-        {label}: {getter(props)}
-      </div>
-    ))}
+          {value}
+        </div>
+      ) : (
+        <div />
+      );
+    })}
   </div>
 );
 

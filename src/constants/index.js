@@ -2,6 +2,7 @@ import { red, geekblue, green, purple, grey } from "@ant-design/colors";
 
 export const THEME = {
   INFECTED: red[4],
+  HIGHEST_INFECTED: red[2],
   CURED: green[5],
   UNAFFECTED: geekblue[3],
   CHART_BACKGROUND: geekblue[2],
