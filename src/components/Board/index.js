@@ -16,6 +16,7 @@ class Board extends React.Component {
       playgroundSize: 0,
       unaffected: POPULATION_SIZE - 1,
       infected: 1,
+      homeUnaffected: 0,
       highestInfected: 0,
       cured: 0,
       cureTime: 8 * 1000,
@@ -24,20 +25,21 @@ class Board extends React.Component {
   }
 
   countStats(population, self) {
-    const infected = population.filter(({ infected }) => infected).length;
-    self.setState({
-      unaffected: population.filter(
-        ({ infected, cured }) => !infected && !cured
-      ).length,
-      infected,
-      highestInfected:
-        self.props.running && Math.max(infected, self.state.highestInfected),
+    const state = population.reduce(
+      (acc, next) => {
+        acc.infected += Number(next.infected);
+        acc.unaffected += Number(!next.infected && !next.cured);
+        acc.homeUnaffected += Number(next.home && !next.infeted);
+        acc.cured += Number(next.cured);
+        return acc;
+      },
+      { unaffected: 0, infected: 0, homeUnaffected: 0, cured: 0 }
+    );
+    state.highestInfected =
+      self.props.running &&
+      Math.max(state.infected, self.state.highestInfected);
+    self.setState(state);
 
-      cured: population.filter(({ cured }) => cured).length
-    });
-    // if (population.some(({ cured, infected }) => cured && infected)) {
-    //   console.log("Elo dupsko!");
-    // }
   }
 
   Sketch = p => {
@@ -117,7 +119,6 @@ class Board extends React.Component {
             this.infected = false;
             this.cured = true;
             this.infectionTime = 0;
-            console.log(this.infected);
           }
         }
       }
@@ -202,7 +203,13 @@ class Board extends React.Component {
   }
 
   render() {
-    const { unaffected, infected, cured, highestInfected } = this.state;
+    const {
+      unaffected,
+      infected,
+      cured,
+      highestInfected,
+      homeUnaffected
+    } = this.state;
     const { percIsolated, running, playgroundSize } = this.props;
     const atHome = Math.round((percIsolated / 100) * POPULATION_SIZE);
     return (
@@ -218,6 +225,8 @@ class Board extends React.Component {
             cured={cured}
             atHome={atHome}
             highestInfected={highestInfected}
+            percIsolated={percIsolated}
+            homeUnaffected={homeUnaffected}
           />
           <div ref={this.myRef} />
           <Divider orientation="left">timeline</Divider>
