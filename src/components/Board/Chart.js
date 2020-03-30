@@ -13,7 +13,8 @@ class Chart extends PureComponent {
   Sketch = p => {
     const self = this;
     const { playgroundSize } = self.props,
-      height = playgroundSize / 5;
+      height = playgroundSize / 4;
+    const getBarHeight = num => (num / POPULATION_SIZE) * height;
 
     p.setup = () => {
       p.createCanvas(playgroundSize, height);
@@ -25,19 +26,37 @@ class Chart extends PureComponent {
       const { chartData } = self.props;
       p.background(THEME.CHART_BACKGROUND);
 
-      const step = playgroundSize / chartData.length;
+      const step = playgroundSize / (chartData.length - 1);
 
-      for (let i = 0; i < chartData.length; i++) {
-        const { infected, cured } = chartData[i];
-        const infectedSize = (infected / POPULATION_SIZE) * height;
-        const curedSize = (cured / POPULATION_SIZE) * height;
+      for (let i = 0; i < chartData.length - 1; i++) {
+        const { infected, cured } = chartData[i],
+          { infected: nextInfected, cured: nextCured } =
+            chartData[i + 1] || chartData[i];
+
+        const infectedSize = getBarHeight(infected),
+          nextInfectedSize = getBarHeight(nextInfected);
+
+        const curedSize = getBarHeight(cured),
+          nextCuredSize = getBarHeight(nextCured);
+
+        const startX = i * step;
+        const endX = i * step + step;
 
         p.fill(THEME.INFECTED);
         p.stroke(THEME.INFECTED);
-        p.rect(i * step, height - infectedSize, step, height);
+        p.quad(
+          startX,
+          height,
+          startX,
+          height - infectedSize,
+          endX,
+          height - nextInfectedSize,
+          endX,
+          height
+        );
         p.fill(THEME.CURED);
         p.stroke(THEME.CURED);
-        p.rect(i * step, 0, step, curedSize);
+        p.quad(startX, 0, startX, curedSize, endX, nextCuredSize, endX, 0);
       }
     };
   };
