@@ -32,19 +32,18 @@ const infoDefs = [
 ];
 
 const Info = props => {
-  const sortedDefs = infoDefs.filter(({ valGetter }) => valGetter(props));
   return (
     <div className="info">
-      {infoDefs.map((_, idx) => {
-        const { valGetter, styleGetter } = sortedDefs[idx] || {
-          valGetter: () => {},
-          styleGetter: () => {}
-        };
+      {infoDefs.map(({ valGetter, styleGetter }, idx) => {
         const value = valGetter(props);
         return (
           <div
             className="bar-container"
-            style={{ widht: props.playgroundSize }}
+            key={`bar${idx}`}
+            style={{
+              widht: props.playgroundSize,
+              ...(value ? {} : { height: 0, visibility: "hidden" })
+            }}
           >
             <div
               className="bar"

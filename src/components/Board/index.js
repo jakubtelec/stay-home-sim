@@ -3,8 +3,14 @@ import p5 from "p5";
 // import Controls from "./Controls.js";
 import Chart from "./Chart.js";
 import Info from "./Info.js";
-import { THEME, POPULATION_SIZE } from "../../constants";
+import {
+  THEME,
+  POPULATION_SIZE,
+  DELTA_FACTOR,
+  SHOW_FPS
+} from "../../constants";
 import { Card, Divider } from "antd";
+import { hashify, getNeighbours } from "../../helpers";
 
 import "../../styles.css";
 
@@ -19,12 +25,14 @@ class Board extends React.Component {
       homeUnaffected: 0,
       highestInfected: 0,
       cured: 0,
+      chartData: [],
       cureTime: 8 * 1000,
       initRender: true
     };
   }
 
-  countStats(population, self) {
+  updateStats(population, self) {
+    // general population data
     const state = population.reduce(
       (acc, next) => {
         acc.infected += Number(next.infected);
@@ -35,25 +43,43 @@ class Board extends React.Component {
       },
       { unaffected: 0, infected: 0, homeUnaffected: 0, cured: 0 }
     );
-    state.highestInfected =
-      self.props.running &&
-      Math.max(state.infected, self.state.highestInfected);
-    self.setState(state);
+    state.highestInfected = Math.max(
+      state.infected,
+      self.state.highestInfected
+    );
+    // chart data
+    const { chartData } = self.state,
+      { infected, cured } = state,
+      { running } = self.props;
 
+    if (running) {
+      state.chartData = [...chartData, { infected, cured }];
+    } else state.chartData = chartData;
+    //
+    // check if infected state is finished
+    if (infected === 0) {
+      self.props.setFinished(true);
+    }
+    self.setState(state);
   }
 
   Sketch = p => {
     const self = this,
       {
-        countStats,
+        updateStats,
         props: { percIsolated, playgroundSize }
       } = self,
       atHome = Math.round((percIsolated / 100) * POPULATION_SIZE),
+      bucketSize = playgroundSize / 20,
       displaySize = playgroundSize / 35,
-      maxSpeed = displaySize / 8,
+      maxSpeed = displaySize / 5,
       spring = 0.05,
       friction = -0.9,
       population = [];
+
+    let fps = 0,
+      lastTimestamp = 0,
+      lastFramesCount = 0;
 
     p.setup = () => {
       p.createCanvas(playgroundSize, playgroundSize);
@@ -72,6 +98,12 @@ class Board extends React.Component {
     };
 
     p.draw = () => {
+      if (SHOW_FPS && Date.now() >= lastTimestamp + 1000) {
+        fps = p.frameCount - lastFramesCount;
+        lastFramesCount = p.frameCount;
+        lastTimestamp = Date.now();
+      }
+
       if (self.props.running || self.state.initRender) {
         p.background("white");
         if (self.state.initRender) {
@@ -79,7 +111,7 @@ class Board extends React.Component {
         }
         if (!self.countInterval && !self.state.initRender)
           self.countInterval = setInterval(
-            () => countStats(population, self),
+            () => updateStats(population, self),
             500
           );
         if (
@@ -90,11 +122,21 @@ class Board extends React.Component {
 
         population.forEach(person => person.checkStatus());
 
+        const hashed = hashify(population, bucketSize);
+
         population.forEach(person => {
-          person.collide();
+          person.collide(hashed, bucketSize);
+        });
+
+        population.forEach(person => {
           person.move();
           person.display();
         });
+
+        if (SHOW_FPS) {
+          p.fill("black");
+          p.text(`FPS: ${fps}`, 10, 10);
+        }
       }
     };
 
@@ -123,9 +165,10 @@ class Board extends React.Component {
         }
       }
 
-      collide() {
-        for (let i = this.id + 1; i < POPULATION_SIZE; i++) {
-          const other = this.others[i];
+      collide(hashed, bucketSize) {
+        const neighbours = getNeighbours(this, hashed, bucketSize);
+        for (const other of neighbours) {
+          // const other = this.others[i];
           let dx = other.x - this.x;
           let dy = other.y - this.y;
           let distance = p.sqrt(dx * dx + dy * dy);
@@ -161,8 +204,8 @@ class Board extends React.Component {
       }
 
       move() {
-        this.x += this.vx;
-        this.y += this.vy;
+        this.x += this.vx * (p.deltaTime / DELTA_FACTOR);
+        this.y += this.vy * (p.deltaTime / DELTA_FACTOR);
         if (this.x + this.diameter / 2 > playgroundSize) {
           this.x = playgroundSize - this.diameter / 2;
           this.vx *= friction;
@@ -208,7 +251,8 @@ class Board extends React.Component {
       infected,
       cured,
       highestInfected,
-      homeUnaffected
+      homeUnaffected,
+      chartData
     } = this.state;
     const { percIsolated, running, playgroundSize } = this.props;
     const atHome = Math.round((percIsolated / 100) * POPULATION_SIZE);
@@ -230,14 +274,7 @@ class Board extends React.Component {
           />
           <div ref={this.myRef} />
           <Divider orientation="left">timeline</Divider>
-          <Chart
-            playgroundSize={playgroundSize}
-            unaffected={unaffected}
-            infected={infected}
-            cured={cured}
-            highestInfected={highestInfected}
-            running={running}
-          />
+          <Chart playgroundSize={playgroundSize} chartData={chartData} />
         </Card>
       </div>
     );

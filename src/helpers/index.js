@@ -22,3 +22,38 @@ export const computeSizes = () => {
       sizeRatio * Math.min(window.innerWidth, window.innerHeight);
   return { playgroundSize, aspectRatio, examplesNum };
 };
+
+export const hashify = (objects, bucketSize) => {
+  const buckets = {};
+  for (const object of objects) {
+    const { x, y } = object;
+    const hash =
+      String(Math.floor(x / bucketSize)) +
+      "_" +
+      String(Math.floor(y / bucketSize));
+    if (!buckets[hash]) buckets[hash] = [];
+    buckets[hash].push(object);
+  }
+  return buckets;
+};
+
+export const getNeighbours = (obj, hashed, bucketSize) => {
+  const x = Math.floor(obj.x / bucketSize);
+  const y = Math.floor(obj.y / bucketSize);
+  const neighbours = [
+    [x - 1, y - 1],
+    [x, y - 1],
+    [x + 1, y + 1],
+    [x - 1, y],
+    [x, y],
+    [x + 1, y],
+    [x - 1, y + 1],
+    [x, y + 1],
+    [x + 1, y + 1]
+  ];
+  return neighbours.reduce((acc, [nx, ny]) => {
+    const bucket = hashed[String(nx) + "_" + String(ny)];
+    if (bucket) return acc.concat(bucket);
+    return acc;
+  }, []);
+};
