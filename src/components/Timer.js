@@ -15,23 +15,28 @@ class Timer extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    const { running } = this.props;
+    const { running, finished } = this.props;
     if (prevProps.running !== running) {
-      if (running) {
+      if (running && !finished) {
         this.ticker = setInterval(() => this.tick(), 100);
       } else {
         clearInterval(this.ticker);
-        this.setState({ time: 0 });
+        if (!finished) this.setState({ time: 0 });
       }
     }
   }
 
+  componentWillUnmount() {
+    clearInterval(this.ticker);
+  }
+
   render() {
     const { time } = this.state;
+    const { finished } = this.props;
     const secs = Math.floor(time / 10);
     return (
       <div style={{ fontSize: 16 }}>
-        Time running: {secs}.{time % 10} s
+        Time running: {secs}.{time % 10}{" "}
       </div>
     );
   }

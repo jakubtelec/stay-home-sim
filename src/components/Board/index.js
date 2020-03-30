@@ -3,8 +3,14 @@ import p5 from "p5";
 // import Controls from "./Controls.js";
 import Chart from "./Chart.js";
 import Info from "./Info.js";
-import { THEME, POPULATION_SIZE } from "../../constants";
+import {
+  THEME,
+  POPULATION_SIZE,
+  DELTA_FACTOR,
+  SHOW_FPS
+} from "../../constants";
 import { Card, Divider } from "antd";
+import { hashify, getNeighbours } from "../../helpers";
 
 import "../../styles.css";
 
@@ -14,22 +20,66 @@ class Board extends React.Component {
     this.myRef = React.createRef();
     this.state = {
       playgroundSize: 0,
+      unaffected: POPULATION_SIZE - 1,
       infected: 1,
+      homeUnaffected: 0,
+      highestInfected: 0,
       cured: 0,
+      chartData: [],
       cureTime: 8 * 1000,
       initRender: true
     };
   }
 
+  updateStats(population, self) {
+    // general population data
+    const state = population.reduce(
+      (acc, next) => {
+        acc.infected += Number(next.infected);
+        acc.unaffected += Number(!next.infected && !next.cured);
+        acc.homeUnaffected += Number(next.home && !next.infeted);
+        acc.cured += Number(next.cured);
+        return acc;
+      },
+      { unaffected: 0, infected: 0, homeUnaffected: 0, cured: 0 }
+    );
+    state.highestInfected = Math.max(
+      state.infected,
+      self.state.highestInfected
+    );
+    // chart data
+    const { chartData } = self.state,
+      { infected, cured } = state,
+      { running } = self.props;
+
+    if (running) {
+      state.chartData = [...chartData, { infected, cured }];
+    } else state.chartData = chartData;
+    //
+    // check if infected state is finished
+    if (infected === 0) {
+      self.props.setFinished(true);
+    }
+    self.setState(state);
+  }
+
   Sketch = p => {
     const self = this,
-      { percIsolated, playgroundSize } = self.props,
+      {
+        updateStats,
+        props: { percIsolated, playgroundSize }
+      } = self,
       atHome = Math.round((percIsolated / 100) * POPULATION_SIZE),
+      bucketSize = playgroundSize / 20,
       displaySize = playgroundSize / 35,
-      maxSpeed = displaySize / 8,
+      maxSpeed = displaySize / 5,
       spring = 0.05,
       friction = -0.9,
       population = [];
+
+    let fps = 0,
+      lastTimestamp = 0,
+      lastFramesCount = 0;
 
     p.setup = () => {
       p.createCanvas(playgroundSize, playgroundSize);
@@ -48,22 +98,45 @@ class Board extends React.Component {
     };
 
     p.draw = () => {
+      if (SHOW_FPS && Date.now() >= lastTimestamp + 1000) {
+        fps = p.frameCount - lastFramesCount;
+        lastFramesCount = p.frameCount;
+        lastTimestamp = Date.now();
+      }
+
       if (self.props.running || self.state.initRender) {
         p.background("white");
         if (self.state.initRender) {
           self.setState({ initRender: false });
         }
+        if (!self.countInterval && !self.state.initRender)
+          self.countInterval = setInterval(
+            () => updateStats(population, self),
+            500
+          );
         if (
           self.props.running &&
           !population[POPULATION_SIZE - 1].infectionTime
         )
           population[POPULATION_SIZE - 1].infectionTime = Date.now();
+
+        population.forEach(person => person.checkStatus());
+
+        const hashed = hashify(population, bucketSize);
+
         population.forEach(person => {
-          person.checkStatus();
-          person.collide();
+          person.collide(hashed, bucketSize);
+        });
+
+        population.forEach(person => {
           person.move();
           person.display();
         });
+
+        if (SHOW_FPS) {
+          p.fill("black");
+          p.text(`FPS: ${fps}`, 10, 10);
+        }
       }
     };
 
@@ -83,20 +156,19 @@ class Board extends React.Component {
       }
 
       checkStatus() {
-        if (this.infected && !this.cured && this.infectionTime) {
+        if (!this.cured && this.infected && this.infectionTime) {
           if (Date.now() - this.infectionTime > self.state.cureTime) {
+            this.infected = false;
             this.cured = true;
-            self.setState({
-              infected: self.state.infected - 1,
-              cured: self.state.cured + 1
-            });
+            this.infectionTime = 0;
           }
         }
       }
 
-      collide() {
-        for (let i = this.id + 1; i < POPULATION_SIZE; i++) {
-          const other = this.others[i];
+      collide(hashed, bucketSize) {
+        const neighbours = getNeighbours(this, hashed, bucketSize);
+        for (const other of neighbours) {
+          // const other = this.others[i];
           let dx = other.x - this.x;
           let dy = other.y - this.y;
           let distance = p.sqrt(dx * dx + dy * dy);
@@ -117,24 +189,23 @@ class Board extends React.Component {
               other.vy += ay;
             }
 
-            if (!this.cured && this.infected !== other.infected) {
-              if (this.infected && !other.infected) {
-                other.infected = true;
-                other.infectionTime = Date.now();
-                self.setState({ infected: self.state.infected + 1 });
-              } else if (!other.cured) {
-                this.infected = true;
-                this.infectionTime = Date.now();
-                self.setState({ infected: self.state.infected + 1 });
-              }
+            let target;
+            if (this.infected && !other.infected) {
+              target = other;
+            } else if (!this.infected && other.infected) {
+              target = this;
+            }
+            if (target && !target.cured) {
+              target.infected = true;
+              target.infectionTime = Date.now();
             }
           }
         }
       }
 
       move() {
-        this.x += this.vx;
-        this.y += this.vy;
+        this.x += this.vx * (p.deltaTime / DELTA_FACTOR);
+        this.y += this.vy * (p.deltaTime / DELTA_FACTOR);
         if (this.x + this.diameter / 2 > playgroundSize) {
           this.x = playgroundSize - this.diameter / 2;
           this.vx *= friction;
@@ -166,16 +237,23 @@ class Board extends React.Component {
     }
   };
 
-  refreshP5() {
+  componentDidMount() {
     this.myP5 = new p5(this.Sketch, this.myRef.current);
   }
 
-  componentDidMount() {
-    this.refreshP5();
+  componentWillUnmount() {
+    clearInterval(this.countInterval);
   }
 
   render() {
-    const { infected, cured } = this.state;
+    const {
+      unaffected,
+      infected,
+      cured,
+      highestInfected,
+      homeUnaffected,
+      chartData
+    } = this.state;
     const { percIsolated, running, playgroundSize } = this.props;
     const atHome = Math.round((percIsolated / 100) * POPULATION_SIZE);
     return (
@@ -184,15 +262,19 @@ class Board extends React.Component {
           {/* <Divider orientation="left">{"%"}</Divider> */}
           {/* <Controls percIsolated={percIsolated} />
           <Divider orientation="left">stats</Divider> */}
-          <Info infected={infected} cured={cured} atHome={atHome} />
-          <div ref={this.myRef} />
-          <Divider orientation="left">timeline</Divider>
-          <Chart
+          <Info
             playgroundSize={playgroundSize}
+            unaffected={unaffected}
             infected={infected}
             cured={cured}
-            running={running}
+            atHome={atHome}
+            highestInfected={highestInfected}
+            percIsolated={percIsolated}
+            homeUnaffected={homeUnaffected}
           />
+          <div ref={this.myRef} />
+          <Divider orientation="left">timeline</Divider>
+          <Chart playgroundSize={playgroundSize} chartData={chartData} />
         </Card>
       </div>
     );

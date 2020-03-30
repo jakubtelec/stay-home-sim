@@ -4,7 +4,13 @@ import { THEME } from "../constants";
 import { GithubOutlined } from "@ant-design/icons";
 import { Button } from "antd";
 
-const GeneralControls = ({ start, resetFields, running, playgroundSize }) => {
+const GeneralControls = ({
+  start,
+  resetFields,
+  running,
+  finished,
+  playgroundSize
+}) => {
   return (
     <div className="controls-bar">
       <div className="controls">
@@ -25,7 +31,7 @@ const GeneralControls = ({ start, resetFields, running, playgroundSize }) => {
         >
           Reset
         </Button>
-        <Timer running={running} />
+        <Timer running={running} finished={finished} />
       </div>
       <GithubOutlined
         onClick={() => {
