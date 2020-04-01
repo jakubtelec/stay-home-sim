@@ -1,5 +1,6 @@
 import React from "react";
-import Timer from "./Timer.js";
+import Timer from "./Timer";
+import Legend from "./Legend";
 import { THEME } from "../constants";
 import { GithubOutlined } from "@ant-design/icons";
 import { Button } from "antd";
@@ -32,6 +33,7 @@ const GeneralControls = ({
           Reset
         </Button>
         <Timer running={running} finished={finished} />
+        {/* <Legend /> */}
       </div>
       <GithubOutlined
         onClick={() => {
