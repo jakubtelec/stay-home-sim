@@ -1,13 +1,14 @@
 import React from "react";
 import p5 from "p5";
-// import Controls from "./Controls.js";
+import Controls from "./Controls.js";
 import Chart from "./Chart.js";
 import Info from "./Info.js";
 import {
   THEME,
   POPULATION_SIZE,
   DELTA_FACTOR,
-  SHOW_FPS
+  SHOW_FPS,
+  HALO_DURATION,
 } from "../../constants";
 import { Card, Divider } from "antd";
 import { hashify, getNeighbours } from "../../helpers";
@@ -27,7 +28,7 @@ class Board extends React.Component {
       cured: 0,
       chartData: [],
       cureTime: 8 * 1000,
-      initRender: true
+      initRender: true,
     };
   }
 
@@ -63,11 +64,11 @@ class Board extends React.Component {
     self.setState(state);
   }
 
-  Sketch = p => {
+  Sketch = (p) => {
     const self = this,
       {
         updateStats,
-        props: { percIsolated, playgroundSize }
+        props: { percIsolated, playgroundSize },
       } = self,
       atHome = Math.round((percIsolated / 100) * POPULATION_SIZE),
       bucketSize = playgroundSize / 20,
@@ -120,15 +121,15 @@ class Board extends React.Component {
         )
           population[POPULATION_SIZE - 1].infectionTime = Date.now();
 
-        population.forEach(person => person.checkStatus());
+        population.forEach((person) => person.checkStatus());
 
         const hashed = hashify(population, bucketSize);
 
-        population.forEach(person => {
+        population.forEach((person) => {
           person.collide(hashed, bucketSize);
         });
 
-        population.forEach(person => {
+        population.forEach((person) => {
           person.move();
           person.display();
         });
@@ -223,6 +224,7 @@ class Board extends React.Component {
       }
 
       display() {
+        p.noStroke();
         p.fill(
           this.cured
             ? THEME.CURED
@@ -233,6 +235,19 @@ class Board extends React.Component {
             : THEME.UNAFFECTED
         );
         p.ellipse(this.x, this.y, this.diameter, this.diameter);
+
+        const sinceInfection = this.infected && Date.now() - this.infectionTime;
+
+        if (sinceInfection && sinceInfection < HALO_DURATION) {
+          const haloSize =
+            this.diameter +
+            (this.diameter * 4 * sinceInfection) / HALO_DURATION;
+          const haloColor = p.color(THEME.INFECTED);
+          haloColor.setAlpha(255 - (sinceInfection / HALO_DURATION) * 255);
+          p.noFill();
+          p.stroke(haloColor);
+          p.ellipse(this.x, this.y, haloSize, haloSize);
+        }
       }
     }
   };
@@ -252,31 +267,28 @@ class Board extends React.Component {
       cured,
       highestInfected,
       homeUnaffected,
-      chartData
+      chartData,
     } = this.state;
-    const { percIsolated, running, playgroundSize } = this.props;
+    const { percIsolated, playgroundSize, setPerc } = this.props;
     const atHome = Math.round((percIsolated / 100) * POPULATION_SIZE);
+
     return (
-      <div className="card">
-        <Card title={`Social distancing: ${percIsolated}%`}>
-          {/* <Divider orientation="left">{"%"}</Divider> */}
-          {/* <Controls percIsolated={percIsolated} />
-          <Divider orientation="left">stats</Divider> */}
-          <Info
-            playgroundSize={playgroundSize}
-            unaffected={unaffected}
-            infected={infected}
-            cured={cured}
-            atHome={atHome}
-            highestInfected={highestInfected}
-            percIsolated={percIsolated}
-            homeUnaffected={homeUnaffected}
-          />
-          <div ref={this.myRef} />
-          <Divider orientation="left">timeline</Divider>
-          <Chart playgroundSize={playgroundSize} chartData={chartData} />
-        </Card>
-      </div>
+      <Card>
+        <Controls percIsolated={percIsolated} setPerc={setPerc} />
+        <Divider></Divider>
+        <Info
+          playgroundSize={playgroundSize}
+          unaffected={unaffected}
+          infected={infected}
+          cured={cured}
+          atHome={atHome}
+          highestInfected={highestInfected}
+          percIsolated={percIsolated}
+          homeUnaffected={homeUnaffected}
+        />
+        <div ref={this.myRef} />
+        <Chart playgroundSize={playgroundSize} chartData={chartData} />
+      </Card>
     );
   }
 }

@@ -8,6 +8,7 @@
     "@ant-design/colors": "^4.0.0",
     "@ant-design/icons": "^4.0.3",
     "antd": "^4.0.3",
+    "debounce": "^1.2.0",
     "p5": "1.0.0",
     "react": "16.12.0",
     "react-dom": "16.12.0",
