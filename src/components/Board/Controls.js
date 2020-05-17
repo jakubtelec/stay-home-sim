@@ -9,7 +9,7 @@ class Controls extends React.Component {
   };
 
   updatePerc(perc) {
-    console.log("p", perc, this.props.percIsolated);
+    // console.log("p", perc, this.props.percIsolated);
     this.setState({ perc });
     this.props.setPerc(perc);
   }
@@ -19,11 +19,12 @@ class Controls extends React.Component {
   }
 
   render() {
-    const { percIsolated } = this.props;
+    const { percIsolated, running } = this.props;
     const { perc } = this.state;
     return (
       <div className="slider">
         <Slider
+          disabled={running}
           min={0}
           max={100}
           onChange={(v) => this.updatePerc(v)}

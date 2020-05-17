@@ -269,12 +269,16 @@ class Board extends React.Component {
       homeUnaffected,
       chartData,
     } = this.state;
-    const { percIsolated, playgroundSize, setPerc } = this.props;
+    const { percIsolated, playgroundSize, setPerc, running } = this.props;
     const atHome = Math.round((percIsolated / 100) * POPULATION_SIZE);
 
     return (
       <Card>
-        <Controls percIsolated={percIsolated} setPerc={setPerc} />
+        <Controls
+          percIsolated={percIsolated}
+          setPerc={setPerc}
+          running={running}
+        />
         <Divider></Divider>
         <Info
           playgroundSize={playgroundSize}
