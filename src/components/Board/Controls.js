@@ -1,25 +1,38 @@
 import React from "react";
-import { Slider, Row, Col } from "antd";
+import { Slider } from "antd";
 
 import "antd/dist/antd.css";
 
 class Controls extends React.Component {
+  state = {
+    perc: 0,
+  };
+
+  updatePerc(perc) {
+    // console.log("p", perc, this.props.percIsolated);
+    this.setState({ perc });
+    this.props.setPerc(perc);
+  }
+
+  componentDidMount() {
+    this.updatePerc(this.props.percIsolated);
+  }
+
   render() {
-    const { percIsolated } = this.props;
+    const { percIsolated, running } = this.props;
+    const { perc } = this.state;
     return (
-      <Row>
-        <Col flex={5}>
-          <Slider
-            min={0}
-            max={100}
-            onChange={this.onChange}
-            value={percIsolated}
-          />
-        </Col>
-        <Col flex={1}>
-          <div>{percIsolated}%</div>
-        </Col>
-      </Row>
+      <div className="slider">
+        <Slider
+          disabled={running}
+          min={0}
+          max={100}
+          onChange={(v) => this.updatePerc(v)}
+          value={perc}
+          style={{ width: "80%" }}
+        />
+        <div>{percIsolated}%</div>
+      </div>
     );
   }
 }

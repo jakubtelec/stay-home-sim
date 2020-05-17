@@ -1,50 +1,53 @@
 import React from "react";
-import Timer from "./Timer.js";
+import Timer from "./Timer";
+import Legend from "./Legend";
+import { getAspectRatio } from "../helpers";
 import { THEME } from "../constants";
 import { GithubOutlined } from "@ant-design/icons";
 import { Button } from "antd";
+import "../styles.css";
 
 const GeneralControls = ({
   start,
   resetFields,
   running,
   finished,
-  playgroundSize
-}) => {
-  return (
-    <div className="controls-bar">
+  playgroundsContainerSize,
+}) => (
+  <div className="controls-bar" style={{ width: playgroundsContainerSize }}>
+    <div className="stackable-controls">
       <div className="controls">
         <Button
-          size={"large"}
+          size={getAspectRatio() <= 1 ? "normal" : "large"}
           className="control-button"
-          style={{ width: playgroundSize / 3 }}
           onClick={start}
           disabled={running}
         >
           Start
         </Button>
         <Button
-          size={"large"}
+          size={getAspectRatio() <= 1 ? "normal" : "large"}
           className="control-button"
-          style={{ width: playgroundSize / 3 }}
           onClick={resetFields}
         >
           Reset
         </Button>
         <Timer running={running} finished={finished} />
       </div>
-      <GithubOutlined
-        onClick={() => {
-          const tab = window.open(
-            "https://github.com/jakubtelec/stay-home-sim",
-            "_blank"
-          );
-          tab.focus();
-        }}
-        style={{ fontSize: 40, cursor: "pointer", color: THEME.GITHUB_LINK }}
-      />
+      <Legend />
     </div>
-  );
-};
+    <GithubOutlined
+      onClick={() => {
+        const tab = window.open(
+          "https://github.com/jakubtelec/stay-home-sim",
+          "_blank"
+        );
+        tab.focus();
+      }}
+      style={{ color: THEME.GITHUB_LINK }}
+      className="git-icon"
+    />
+  </div>
+);
 
 export default GeneralControls;

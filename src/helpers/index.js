@@ -1,15 +1,19 @@
-// import { MAX_WIDTH } from "../constants";
+import { DEFAULT_PERCENTAGES } from "../constants";
+
+export const getAspectRatio = () => window.innerWidth / window.innerHeight;
 
 export const computeSizes = () => {
-  const aspectRatio = window.innerWidth / window.innerHeight,
+  const aspectRatio = getAspectRatio(),
     sizeRatio =
       aspectRatio >= 1.8
-        ? 0.3
+        ? 0.25
         : aspectRatio >= 1.4
-        ? 0.34
+        ? 0.3
         : aspectRatio >= 1
-        ? 0.42
-        : 0.58,
+        ? 0.45
+        : aspectRatio >= 0.6
+        ? 0.4
+        : 0.45,
     examplesNum =
       aspectRatio >= 1.8
         ? 4
@@ -19,9 +23,18 @@ export const computeSizes = () => {
         ? 2
         : 1,
     playgroundSize =
-      sizeRatio * Math.min(window.innerWidth, window.innerHeight);
-  return { playgroundSize, aspectRatio, examplesNum };
+      sizeRatio * Math.min(window.innerWidth, window.innerHeight),
+    playgroundsContainerSize =
+      (playgroundSize + 48) * examplesNum + (examplesNum - 1) * 24;
+  // (single playground size * 2 * card padding) + (examples number - 1) * right padding of playground card)
+  return { playgroundSize, aspectRatio, examplesNum, playgroundsContainerSize };
 };
+
+export const getDefaultBoards = () =>
+  DEFAULT_PERCENTAGES.map((perc) => ({
+    percIsolated: perc,
+    finished: false,
+  }));
 
 export const hashify = (objects, bucketSize) => {
   const buckets = {};
@@ -49,7 +62,7 @@ export const getNeighbours = (obj, hashed, bucketSize) => {
     [x + 1, y],
     [x - 1, y + 1],
     [x, y + 1],
-    [x + 1, y + 1]
+    [x + 1, y + 1],
   ];
   return neighbours.reduce((acc, [nx, ny]) => {
     const bucket = hashed[String(nx) + "_" + String(ny)];

@@ -6,7 +6,7 @@ class Timer extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      time: 0
+      time: 0,
     };
   }
 
@@ -32,10 +32,10 @@ class Timer extends React.Component {
 
   render() {
     const { time } = this.state;
-    const { finished } = this.props;
+    // const { finished } = this.props;
     const secs = Math.floor(time / 10);
     return (
-      <div style={{ fontSize: 16 }}>
+      <div className="timer">
         Time running: {secs}.{time % 10}{" "}
       </div>
     );
