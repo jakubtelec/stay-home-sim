@@ -82,8 +82,7 @@ class Board extends React.Component {
       lastTimestamp = 0,
       lastFramesCount = 0;
 
-    p.setup = () => {
-      p.createCanvas(playgroundSize, playgroundSize);
+    const initPopulation = () => {
       for (let i = 0; i < POPULATION_SIZE; i++) {
         population[i] = new Person(
           p.random(playgroundSize),
@@ -95,7 +94,23 @@ class Board extends React.Component {
         );
       }
       population[POPULATION_SIZE - 1].infected = true;
+    };
+
+    const spawnP5 = () => {
+      p.createCanvas(playgroundSize, playgroundSize);
+      initPopulation();
       p.noStroke();
+    };
+
+    p.respawnP5 = function () {
+      p.resizeCanvas(playgroundSize, playgroundSize);
+      initPopulation();
+      p.noStroke();
+      self.setState((oldState)) => ({ ...oldState, initRender: true }));
+    };
+
+    p.setup = () => {
+      spawnP5();
     };
 
     p.draw = () => {
@@ -169,18 +184,16 @@ class Board extends React.Component {
       collide(hashed, bucketSize) {
         const neighbours = getNeighbours(this, hashed, bucketSize);
         for (const other of neighbours) {
-          // const other = this.others[i];
-          let dx = other.x - this.x;
-          let dy = other.y - this.y;
-          let distance = p.sqrt(dx * dx + dy * dy);
-          let minDist = other.diameter / 2 + this.diameter / 2;
+          let dx = other.x - this.x,
+            dy = other.y - this.y;
+          let distance = p.sqrt(dx * dx + dy * dy),
+            minDist = other.diameter / 2 + this.diameter / 2;
           if (distance < minDist) {
-            let angle = p.atan2(dy, dx);
-            let targetX = this.x + p.cos(angle) * minDist;
-            let targetY = this.y + p.sin(angle) * minDist;
-            let ax = (targetX - other.x) * spring;
-            let ay = (targetY - other.y) * spring;
-
+            let angle = p.atan2(dy, dx),
+              targetX = this.x + p.cos(angle) * minDist,
+              targetY = this.y + p.sin(angle) * minDist,
+              ax = (targetX - other.x) * spring,
+              ay = (targetY - other.y) * spring;
             if (!this.home) {
               this.vx -= ax;
               this.vy -= ay;
@@ -189,7 +202,6 @@ class Board extends React.Component {
               other.vx += ax;
               other.vy += ay;
             }
-
             let target;
             if (this.infected && !other.infected) {
               target = other;
@@ -274,6 +286,14 @@ class Board extends React.Component {
 
     return (
       <Card>
+        <button
+          onClick={() => {
+            // console.log(this.myP5);
+            this.myP5.respawnP5();
+          }}
+        >
+          Elo
+        </button>
         <Controls
           percIsolated={percIsolated}
           setPerc={setPerc}
